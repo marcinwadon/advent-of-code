@@ -1,14 +1,7 @@
 package net.wadon
 
-import java.nio.file.Paths
-
-import cats.effect.{Blocker, ExitCode, IO, IOApp}
-import cats.implicits._
-import fs2.{Stream, io, text}
-
-object YCombinator {
-  def Y[T](func: (T => T) => (T => T)): (T => T) = func(Y(func))(_: T)
-}
+import cats.effect.{ExitCode, IO, IOApp}
+import fs2.Stream
 
 object Day01 extends IOApp {
   import YCombinator._
@@ -27,14 +20,7 @@ object Day01 extends IOApp {
 
   val path = getClass.getResource("/Day01.txt").getPath
 
-  val reader: Stream[IO, String] = Stream.resource(Blocker[IO]).flatMap {
-    blocker =>
-      io.file
-        .readAll[IO](Paths.get(path), blocker, 4096)
-        .through(text.utf8Decode)
-        .through(text.lines)
-        .filter(s => !s.trim.isEmpty)
-  }
+  val reader: Stream[IO, String] = FileReader.reader(path)
 
   val part1: Stream[IO, Int] =
     reader
@@ -50,6 +36,6 @@ object Day01 extends IOApp {
     for {
       p1 <- part1.compile.toList.map(_.last)
       p2 <- part2.compile.toList.map(_.last)
-      _ <- IO { println(p1, p2) }
+      _ <- IO { println((p1, p2)) }
     } yield ExitCode.Success
 }
